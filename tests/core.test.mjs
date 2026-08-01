@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  INSTRUMENT_GROUPS,
   addMinutes,
   buildOtherValue,
   filterSchedules,
@@ -12,6 +13,15 @@ import {
   todayKey,
   validateScheduleInput,
 } from "../js/core.js";
+
+test("主要な打楽器を専用グループに含める", () => {
+  const percussion = INSTRUMENT_GROUPS.find((group) => group.name === "打楽器");
+  assert.ok(percussion);
+  assert.ok(percussion.values.includes("ティンパニ"));
+  assert.ok(percussion.values.includes("マリンバ"));
+  assert.ok(percussion.values.includes("グロッケン"));
+  assert.ok(percussion.values.includes("スネアドラム"));
+});
 
 test("日本時間の日付キーを生成する", () => {
   assert.equal(todayKey(new Date("2026-08-01T14:59:00Z")), "2026-08-01");

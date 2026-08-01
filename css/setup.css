@@ -1,15 +1,12 @@
 .setup-page {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 90% 0%, rgba(243, 167, 18, 0.09), transparent 24rem),
-    var(--bg);
+  background: var(--bg);
 }
 
 .setup-header {
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface);
   padding: 0.8rem max(1rem, calc((100vw - 54rem) / 2));
-  backdrop-filter: blur(14px);
 }
 
 .setup-main {
@@ -25,9 +22,9 @@
 
 .setup-hero h1 {
   margin: 0;
-  font-size: clamp(2rem, 8vw, 3.6rem);
-  letter-spacing: -0.045em;
-  line-height: 1.12;
+  font-size: clamp(1.7rem, 7vw, 2.3rem);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .setup-hero > p:last-child {
@@ -40,8 +37,8 @@
 .steps-card {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: var(--shadow-sm);
+  background: var(--surface);
+  box-shadow: none;
   padding: 1.2rem;
 }
 
@@ -160,6 +157,13 @@ code {
   padding-left: 1.4rem;
   color: var(--muted);
   line-height: 1.9;
+}
+
+.setup-footer {
+  color: #8a918f;
+  padding: 0 1rem 1.5rem;
+  font-size: 0.7rem;
+  text-align: center;
 }
 
 @media (min-width: 650px) {

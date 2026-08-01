@@ -1,4 +1,4 @@
-# Ensemble Board 初期設定
+# 組み合わせ練習 初期設定
 
 設定は、Cloudflare Turnstile → Googleスプレッドシート／GAS → GitHub Pagesの順で行います。パスワードや秘密鍵をGitHubへ書き込まないでください。
 
@@ -6,7 +6,7 @@
 
 1. [Cloudflare Dashboard](https://dash.cloudflare.com/)へログインします。
 2. 左側の「Turnstile」からウィジェットを追加します。
-3. 名前を `Ensemble Board`、ウィジェットモードを `Managed` にします。
+3. 名前を `組み合わせ練習`、ウィジェットモードを `Managed` にします。
 4. 許可するホスト名に `kamabk28.github.io` を追加します。
 5. 作成後に表示される「サイトキー」と「秘密鍵」を一時的に控えます。
 
@@ -35,7 +35,7 @@ GitHub Pagesの `setup.html` を開きます。公開前はローカルHTTPサ�
 
 ## 3. GoogleスプレッドシートとGASを作る
 
-1. Googleスプレッドシートを新規作成し、名前を `Ensemble Board Data` などにします。
+1. Googleスプレッドシートを新規作成し、名前を `組み合わせ練習データ` などにします。
 2. 「拡張機能」→「Apps Script」を開きます。
 3. `gas/Code.gs` の内容をApps Scriptの `コード.gs` へ貼り付けます。
 4. Apps Script左側の「プロジェクトの設定」でマニフェスト表示を有効にします。
@@ -63,6 +63,28 @@ GitHub Pagesの `setup.html` を開きます。公開前はローカルHTTPサ�
 5. 必要なら `getSetupStatus` を実行し、ログの `ready` が `true` か確認します。
 
 楽器や部屋を後から増やしたい場合は、`Settings` シートへ行を追加できます。`enabled` は `TRUE` にします。「その他」の自由入力は設定不要です。
+
+## 使用上の注意を書き換える
+
+コードを編集せず、Googleスプレッドシートだけで変更できます。
+
+1. アプリ用のGoogleスプレッドシートを開きます。
+2. 画面下の `Settings` シートを開きます。
+3. `type` が `notice` の行を探します。
+4. その行の `value` にある文章を書き換えます。
+5. アプリで「予定を更新」を押すか、ページを再読み込みします。
+
+`group`、`sortOrder`、`enabled` は通常そのままで構いません。注意を一時的に非表示にするときは、該当行の `enabled` を `FALSE` にします。新しい注意を追加するときは、既存行を参考に次のような行を追加します。
+
+| type | group | value | sortOrder | enabled |
+|---|---|---|---|---|
+| `notice` | `注意5` | ここに新しい注意を書く | `5` | `TRUE` |
+
+パスワードや秘密鍵を `Settings` シートへ書かないでください。
+
+## 楽器を追加・変更する
+
+`Settings` シートで `type` が `instrument` の行を編集します。`group` が画面上のグループ名、`value` が楽器名です。打楽器グループには、ティンパニ、主要な鍵盤打楽器、ドラム類などが初期登録されています。
 
 ## 5. GASをWeb APIとして公開する
 

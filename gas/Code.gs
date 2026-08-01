@@ -1,12 +1,12 @@
 /**
- * Ensemble Board - Google Apps Script API
+ * 組み合わせ練習 - Google Apps Script API
  *
  * このファイルはGoogleスプレッドシートに紐づくApps Scriptへ配置します。
  * パスワードや秘密鍵はコードに書かず、スクリプトプロパティへ保存してください。
  */
 
 const APP = Object.freeze({
-  name: "Ensemble Board",
+  name: "組み合わせ練習",
   timeZone: "Asia/Tokyo",
   schedulesSheet: "Schedules",
   settingsSheet: "Settings",
@@ -78,12 +78,35 @@ const DEFAULT_INSTRUMENT_GROUPS = Object.freeze([
     ],
   },
   {
+    name: "打楽器",
+    values: [
+      "打楽器",
+      "ティンパニ",
+      "スネアドラム",
+      "バスドラム",
+      "シンバル",
+      "ドラムセット",
+      "グロッケン",
+      "シロフォン",
+      "ビブラフォン",
+      "マリンバ",
+      "チャイム",
+      "小物打楽器",
+    ],
+  },
+  {
     name: "その他の標準パート",
-    values: ["コントラバス", "打楽器", "ピアノ・キーボード", "ハープ"],
+    values: ["コントラバス", "ピアノ・キーボード", "ハープ"],
   },
 ]);
 
 const DEFAULT_ROOMS = Object.freeze(["音楽室", "映写室", "1-8", "1-9"]);
+const DEFAULT_NOTICES = Object.freeze([
+  "開始・終了時刻と使用場所を確認してから登録してください。",
+  "予定が変わった場合は、できるだけ早く編集または削除してください。",
+  "同じ楽器の重複警告が出ても、人数を分ける場合は登録できます。",
+  "部屋の重複は登録できません。",
+]);
 
 /** ヘルスチェック用。予定データは返しません。 */
 function doGet() {
@@ -167,7 +190,7 @@ function setupSheets() {
   const settings = ensureSheet_(spreadsheet, APP.settingsSheet, SETTINGS_HEADERS);
   const changeLog = ensureSheet_(spreadsheet, APP.changeLogSheet, CHANGE_LOG_HEADERS);
 
-  if (settings.getLastRow() <= 1) writeDefaultSettings_(settings);
+  syncDefaultSettings_(settings);
   normalizeScheduleTextColumns_(schedules);
   settings.getRange(2, 3, settings.getMaxRows() - 1, 1).setNumberFormat("@");
   formatSheet_(schedules, SCHEDULE_HEADERS.length);
@@ -576,6 +599,7 @@ function getOptions_() {
       instrumentGroups: DEFAULT_INSTRUMENT_GROUPS,
       instruments: flattenInstrumentGroups_(DEFAULT_INSTRUMENT_GROUPS),
       rooms: DEFAULT_ROOMS.slice(),
+      notices: DEFAULT_NOTICES.slice(),
     };
   }
 
@@ -586,6 +610,9 @@ function getOptions_() {
     .sort(function (a, b) { return Number(a[3]) - Number(b[3]); });
   const roomRows = enabled
     .filter(function (row) { return row[0] === "room"; })
+    .sort(function (a, b) { return Number(a[3]) - Number(b[3]); });
+  const noticeRows = enabled
+    .filter(function (row) { return row[0] === "notice"; })
     .sort(function (a, b) { return Number(a[3]) - Number(b[3]); });
 
   const groupNames = unique_(instrumentRows.map(function (row) { return String(row[1]); }));
@@ -601,6 +628,7 @@ function getOptions_() {
     instrumentGroups: instrumentGroups,
     instruments: flattenInstrumentGroups_(instrumentGroups),
     rooms: roomRows.map(function (row) { return String(row[2]); }),
+    notices: noticeRows.map(function (row) { return String(row[2]); }).filter(Boolean),
   };
 }
 
@@ -718,6 +746,12 @@ function ensureSheet_(spreadsheet, name, headers) {
 }
 
 function writeDefaultSettings_(sheet) {
+  const rows = buildDefaultSettingsRows_();
+  sheet.getRange(2, 3, rows.length, 1).setNumberFormat("@");
+  sheet.getRange(2, 1, rows.length, SETTINGS_HEADERS.length).setValues(rows);
+}
+
+function buildDefaultSettingsRows_() {
   const rows = [];
   let order = 1;
   DEFAULT_INSTRUMENT_GROUPS.forEach(function (group) {
@@ -729,8 +763,40 @@ function writeDefaultSettings_(sheet) {
   DEFAULT_ROOMS.forEach(function (room, index) {
     rows.push(["room", "練習場所", room, index + 1, true]);
   });
-  sheet.getRange(2, 3, rows.length, 1).setNumberFormat("@");
-  sheet.getRange(2, 1, rows.length, SETTINGS_HEADERS.length).setValues(rows);
+  DEFAULT_NOTICES.forEach(function (notice, index) {
+    rows.push(["notice", "注意" + (index + 1), notice, index + 1, true]);
+  });
+  return rows;
+}
+
+function syncDefaultSettings_(sheet) {
+  if (sheet.getLastRow() <= 1) {
+    writeDefaultSettings_(sheet);
+    return;
+  }
+
+  const existingRows = sheet.getRange(2, 1, sheet.getLastRow() - 1, SETTINGS_HEADERS.length).getDisplayValues();
+  existingRows.forEach(function (row, index) {
+    if (row[0] === "instrument" && row[1] === "その他の標準パート" && row[2] === "打楽器") {
+      sheet.getRange(index + 2, 2).setValue("打楽器");
+      row[1] = "打楽器";
+    }
+  });
+  const identities = existingRows.map(settingIdentity_);
+  const additions = buildDefaultSettingsRows_().filter(function (row) {
+    return identities.indexOf(settingIdentity_(row)) < 0;
+  });
+  if (!additions.length) return;
+
+  const startRow = sheet.getLastRow() + 1;
+  sheet.getRange(startRow, 3, additions.length, 1).setNumberFormat("@");
+  sheet.getRange(startRow, 1, additions.length, SETTINGS_HEADERS.length).setValues(additions);
+}
+
+function settingIdentity_(row) {
+  const type = String(row[0] || "");
+  if (type === "notice") return type + ":" + String(row[1] || "");
+  return type + ":" + String(row[2] || "");
 }
 
 function normalizeScheduleTextColumns_(sheet) {

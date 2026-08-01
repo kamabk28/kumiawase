@@ -1,6 +1,6 @@
-# Ensemble Board
+# 組み合わせ練習
 
-吹奏楽部の組み合わせ練習を、スマートフォンから共有・管理するWebアプリです。
+吹奏楽部の組み合わせ練習を、スマートフォンから共有・管理するWebアプリです。制作にはAIを活用しています。
 
 - GitHub Pagesでフロントエンドを公開
 - Google Apps Scriptを認証付きWeb APIとして使用
@@ -41,6 +41,10 @@ GitHub Pages → GAS Web API → Google Spreadsheet
                   ↓
           Cloudflare Turnstile検証
 ```
+
+## 表示内容の変更
+
+使用上の注意は、Googleスプレッドシートの `Settings` シートで変更できます。`type` が `notice` の行にある `value` を書き換えると、次回の画面更新から反映されます。詳しい操作は [SETUP.md](SETUP.md#使用上の注意を書き換える) にあります。
 
 ## 初期設定
 

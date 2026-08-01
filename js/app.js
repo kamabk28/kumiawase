@@ -42,6 +42,9 @@ const state = {
   turnstileWidgetId: null,
   turnstileToken: "",
   toastTimer: null,
+  instrumentGroups: INSTRUMENT_GROUPS,
+  rooms: ROOMS,
+  optionsSignature: "",
 };
 
 const dom = {
@@ -62,9 +65,9 @@ const dom = {
   archiveView: get("archive-view"),
   todayLabel: get("today-label"),
   todaySummary: get("today-summary"),
-  heroDateNumber: get("hero-date-number"),
-  heroDateMonth: get("hero-date-month"),
   lastUpdated: get("last-updated"),
+  rulesCard: get("rules-card"),
+  usageNotices: get("usage-notices"),
   todayLoading: get("today-loading"),
   todayList: get("today-list"),
   archiveLoading: get("archive-loading"),
@@ -77,7 +80,6 @@ const dom = {
   newScheduleButton: get("new-schedule-button"),
   scheduleDialog: get("schedule-dialog"),
   scheduleForm: get("schedule-form"),
-  dialogEyebrow: get("dialog-eyebrow"),
   scheduleDialogTitle: get("schedule-dialog-title"),
   startTime: get("start-time"),
   endTime: get("end-time"),
@@ -123,22 +125,14 @@ function initializeControls() {
     appendInstrumentOptions(select, false);
   });
   [dom.todayRoomFilter, dom.archiveRoomFilter].forEach((select) => {
-    ROOMS.forEach((room) => select.add(new Option(room, room)));
+    state.rooms.forEach((room) => select.add(new Option(room, room)));
   });
 
   const today = todayKey();
   dom.archiveDate.max = previousDateKey(today);
   dom.archiveDate.value = previousDateKey(today);
 
-  const date = new Date(`${today}T12:00:00+09:00`);
-  const dateParts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Tokyo",
-    month: "short",
-    day: "numeric",
-  }).formatToParts(date);
-  dom.heroDateNumber.textContent = dateParts.find((part) => part.type === "day")?.value || "--";
-  dom.heroDateMonth.textContent = (dateParts.find((part) => part.type === "month")?.value || "").toUpperCase();
-  dom.todayLabel.textContent = dateLabel(today).toUpperCase();
+  dom.todayLabel.textContent = dateLabel(today);
 }
 
 function bindEvents() {
@@ -366,6 +360,8 @@ async function loadToday({ silent = false } = {}) {
   try {
     const result = await api.bootstrap(todayKey());
     state.todaySchedules = sortSchedules(result.data.schedules || []);
+    applyAvailableOptions(result.data.options);
+    if (Array.isArray(result.data.options?.notices)) renderUsageNotices(result.data.options.notices);
     renderToday();
     const now = new Date();
     dom.lastUpdated.textContent = `${formatUpdatedTime(now)} 更新`;
@@ -410,6 +406,47 @@ function renderToday() {
   dom.todaySummary.textContent = activeCount ? `${countText}・${activeCount}件が練習中` : countText;
 }
 
+function renderUsageNotices(notices) {
+  const cleanNotices = notices.map((notice) => String(notice).trim()).filter(Boolean);
+  dom.usageNotices.replaceChildren(...cleanNotices.map((notice) => element("li", "", notice)));
+  dom.rulesCard.hidden = cleanNotices.length === 0;
+}
+
+function applyAvailableOptions(options) {
+  if (!options) return;
+  const instrumentGroups = Array.isArray(options.instrumentGroups)
+    ? options.instrumentGroups
+        .map((group) => ({
+          name: String(group.name || "").trim(),
+          values: Array.isArray(group.values) ? group.values.map((value) => String(value).trim()).filter(Boolean) : [],
+        }))
+        .filter((group) => group.name && group.values.length)
+    : [];
+  const rooms = Array.isArray(options.rooms) ? options.rooms.map((room) => String(room).trim()).filter(Boolean) : [];
+  if (!instrumentGroups.length || !rooms.length) return;
+
+  const signature = JSON.stringify({ instrumentGroups, rooms });
+  if (signature === state.optionsSignature) return;
+  state.optionsSignature = signature;
+  state.instrumentGroups = instrumentGroups;
+  state.rooms = rooms;
+
+  populateInstrumentSelect(dom.ownerPart, true);
+  renderWithPartsOptions();
+  populateRoomSelect(dom.room, true);
+  populateFilterSelect(dom.todayPartFilter, instrumentGroups.flatMap((group) => group.values));
+  populateFilterSelect(dom.archivePartFilter, instrumentGroups.flatMap((group) => group.values));
+  populateFilterSelect(dom.todayRoomFilter, rooms);
+  populateFilterSelect(dom.archiveRoomFilter, rooms);
+}
+
+function populateFilterSelect(select, values) {
+  const selected = select.value;
+  select.replaceChildren(new Option("すべて", ""));
+  values.forEach((value) => select.add(new Option(value, value)));
+  select.value = values.includes(selected) ? selected : "";
+}
+
 function renderArchive() {
   const filtered = filterSchedules(state.archiveSchedules, {
     part: dom.archivePartFilter.value,
@@ -424,7 +461,6 @@ function renderScheduleList(container, schedules, editable, date = todayKey()) {
     const empty = element("div", "empty-state");
     const inner = element("div");
     inner.append(
-      element("div", "empty-state-icon", "♪"),
       element("h2", "", editable ? "今日の予定はまだありません" : `${dateLabel(date)}の予定はありません`),
       element("p", "", editable ? "下の「新しい予定」から登録できます。" : "別の日付を選んで確認してください。"),
     );
@@ -457,7 +493,7 @@ function createScheduleCard(schedule, editable) {
   schedule.withParts.forEach((part) => parts.append(element("span", "part-chip", part)));
 
   const room = element("div", "card-room");
-  room.append(element("span", "", "⌖"), element("span", "", schedule.room));
+  room.textContent = `場所：${schedule.room}`;
   main.append(topLine, parts, room);
   body.append(time, main);
   card.append(body);
@@ -506,7 +542,6 @@ function openScheduleDialog(schedule = null) {
   dom.scheduleForm.reset();
   hideError(dom.scheduleError);
   dom.conflictBox.hidden = true;
-  dom.dialogEyebrow.textContent = schedule ? "EDIT SCHEDULE" : "NEW SCHEDULE";
   dom.scheduleDialogTitle.textContent = schedule ? "予定を編集" : "新しい予定";
   dom.saveScheduleButton.textContent = schedule ? "変更を保存" : "登録する";
 
@@ -726,7 +761,7 @@ function populateInstrumentSelect(select, placeholder) {
 }
 
 function appendInstrumentOptions(select, includeOther) {
-  INSTRUMENT_GROUPS.forEach((group) => {
+  state.instrumentGroups.forEach((group) => {
     const optgroup = document.createElement("optgroup");
     optgroup.label = group.name;
     group.values.forEach((value) => optgroup.append(new Option(value, value)));
@@ -738,13 +773,13 @@ function appendInstrumentOptions(select, includeOther) {
 function populateRoomSelect(select, placeholder) {
   select.replaceChildren();
   if (placeholder) select.add(new Option("選択してください", ""));
-  ROOMS.forEach((room) => select.add(new Option(room, room)));
+  state.rooms.forEach((room) => select.add(new Option(room, room)));
   select.add(new Option("その他（入力する）", OTHER_VALUE));
 }
 
 function renderWithPartsOptions() {
   dom.withPartsOptions.replaceChildren();
-  [...INSTRUMENT_GROUPS, { name: "その他", values: [OTHER_VALUE] }].forEach((group) => {
+  [...state.instrumentGroups, { name: "その他", values: [OTHER_VALUE] }].forEach((group) => {
     const wrapper = element("div", "parts-group");
     wrapper.append(element("p", "parts-group-title", group.name));
     const list = element("div", "parts-group-list");
