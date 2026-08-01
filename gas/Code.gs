@@ -168,6 +168,8 @@ function setupSheets() {
   const changeLog = ensureSheet_(spreadsheet, APP.changeLogSheet, CHANGE_LOG_HEADERS);
 
   if (settings.getLastRow() <= 1) writeDefaultSettings_(settings);
+  normalizeScheduleTextColumns_(schedules);
+  settings.getRange(2, 3, settings.getMaxRows() - 1, 1).setNumberFormat("@");
   formatSheet_(schedules, SCHEDULE_HEADERS.length);
   formatSheet_(settings, SETTINGS_HEADERS.length);
   formatSheet_(changeLog, CHANGE_LOG_HEADERS.length);
@@ -577,7 +579,7 @@ function getOptions_() {
     };
   }
 
-  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, SETTINGS_HEADERS.length).getValues();
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, SETTINGS_HEADERS.length).getDisplayValues();
   const enabled = rows.filter(function (row) { return isEnabled_(row[4]); });
   const instrumentRows = enabled
     .filter(function (row) { return row[0] === "instrument"; })
@@ -631,12 +633,12 @@ function rowToSchedule_(row) {
   }
   return {
     id: String(row[0] || ""),
-    practiceDate: String(row[1] || ""),
-    startTime: String(row[2] || ""),
-    endTime: String(row[3] || ""),
+    practiceDate: dateCellToDateKey_(row[1]),
+    startTime: timeCellToTimeKey_(row[2]),
+    endTime: timeCellToTimeKey_(row[3]),
     part: String(row[4] || ""),
     withParts: Array.isArray(withParts) ? withParts : [],
-    room: String(row[6] || ""),
+    room: roomCellToName_(row[6]),
     content: String(row[7] || ""),
     createdAt: dateCellToIso_(row[8]),
     updatedAt: dateCellToIso_(row[9]),
@@ -727,7 +729,22 @@ function writeDefaultSettings_(sheet) {
   DEFAULT_ROOMS.forEach(function (room, index) {
     rows.push(["room", "練習場所", room, index + 1, true]);
   });
+  sheet.getRange(2, 3, rows.length, 1).setNumberFormat("@");
   sheet.getRange(2, 1, rows.length, SETTINGS_HEADERS.length).setValues(rows);
+}
+
+function normalizeScheduleTextColumns_(sheet) {
+  const dataRowCount = Math.max(sheet.getLastRow() - 1, 0);
+  const textRange = sheet.getRange(2, 2, sheet.getMaxRows() - 1, 6);
+  textRange.setNumberFormat("@");
+  if (!dataRowCount) return;
+
+  const normalized = sheet
+    .getRange(2, 1, dataRowCount, SCHEDULE_HEADERS.length)
+    .getValues()
+    .map(rowToSchedule_)
+    .map(function (schedule) { return scheduleToRow_(schedule).slice(1, 7); });
+  sheet.getRange(2, 2, dataRowCount, 6).setValues(normalized);
 }
 
 function formatSheet_(sheet, columnCount) {
@@ -796,6 +813,21 @@ function today_() {
 
 function dateCellToIso_(value) {
   if (value instanceof Date) return value.toISOString();
+  return String(value || "");
+}
+
+function dateCellToDateKey_(value) {
+  if (value instanceof Date) return Utilities.formatDate(value, APP.timeZone, "yyyy-MM-dd");
+  return String(value || "");
+}
+
+function timeCellToTimeKey_(value) {
+  if (value instanceof Date) return Utilities.formatDate(value, APP.timeZone, "HH:mm");
+  return String(value || "");
+}
+
+function roomCellToName_(value) {
+  if (value instanceof Date) return Utilities.formatDate(value, APP.timeZone, "M-d");
   return String(value || "");
 }
 
