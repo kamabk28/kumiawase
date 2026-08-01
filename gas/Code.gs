@@ -615,7 +615,15 @@ function getOptions_() {
     .filter(function (row) { return row[0] === "notice"; })
     .sort(function (a, b) { return Number(a[3]) - Number(b[3]); });
 
-  const groupNames = unique_(instrumentRows.map(function (row) { return String(row[1]); }));
+  const defaultGroupNames = DEFAULT_INSTRUMENT_GROUPS.map(function (group) { return group.name; });
+  const groupNames = unique_(instrumentRows.map(function (row) { return String(row[1]); }))
+    .sort(function (a, b) {
+      const aIndex = defaultGroupNames.indexOf(a);
+      const bIndex = defaultGroupNames.indexOf(b);
+      const aOrder = aIndex >= 0 ? aIndex : defaultGroupNames.length;
+      const bOrder = bIndex >= 0 ? bIndex : defaultGroupNames.length;
+      return aOrder - bOrder;
+    });
   const instrumentGroups = groupNames.map(function (groupName) {
     return {
       name: groupName,
