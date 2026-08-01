@@ -1,4 +1,4 @@
-import { ApiClient, ApiError, MockApi } from "./api.js";
+import { ApiClient, ApiError, MockApi } from "./api.js?v=20260801-2";
 import {
   INSTRUMENT_GROUPS,
   OTHER_VALUE,
@@ -16,7 +16,7 @@ import {
   sortSchedules,
   todayKey,
   validateScheduleInput,
-} from "./core.js";
+} from "./core.js?v=20260801-2";
 
 const config = window.APP_CONFIG;
 const params = new URLSearchParams(window.location.search);

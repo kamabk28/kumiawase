@@ -5,7 +5,7 @@ import {
   roundTime,
   sortSchedules,
   todayKey,
-} from "./core.js";
+} from "./core.js?v=20260801-2";
 
 export class ApiError extends Error {
   constructor(code, message, details = null) {
