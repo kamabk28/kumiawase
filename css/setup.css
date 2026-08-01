@@ -1,0 +1,178 @@
+.setup-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(243, 167, 18, 0.09), transparent 24rem),
+    var(--bg);
+}
+
+.setup-header {
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.8rem max(1rem, calc((100vw - 54rem) / 2));
+  backdrop-filter: blur(14px);
+}
+
+.setup-main {
+  width: min(calc(100% - 2rem), 54rem);
+  margin: 0 auto;
+  padding: 2.2rem 0 4rem;
+}
+
+.setup-hero {
+  max-width: 43rem;
+  margin-bottom: 1.6rem;
+}
+
+.setup-hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 8vw, 3.6rem);
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+}
+
+.setup-hero > p:last-child {
+  margin: 0.8rem 0 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.generator-card,
+.steps-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-sm);
+  padding: 1.2rem;
+}
+
+.steps-card {
+  margin-top: 1rem;
+}
+
+.generator-card h2,
+.steps-card h2 {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+}
+
+.setup-form-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field-group small {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+code {
+  border-radius: 0.35rem;
+  background: var(--surface-soft);
+  padding: 0.12rem 0.28rem;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.generated-values {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.25rem;
+}
+
+.generated-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.generated-heading h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.security-note {
+  border: 1px solid #f0d395;
+  border-radius: var(--radius-sm);
+  background: var(--surface-warm);
+  padding: 0.75rem;
+  color: #725317;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.generated-values dl {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+}
+
+.generated-row {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fbfcfc;
+  padding: 0.75rem;
+}
+
+.generated-row dt {
+  color: var(--brand-strong);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.generated-value-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.generated-value-line code {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  padding: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-value {
+  min-height: 2.35rem;
+  flex: 0 0 auto;
+  border-radius: 0.65rem;
+  background: var(--surface-soft);
+  color: var(--brand-strong);
+  padding: 0 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.steps-card ol {
+  margin: 0 0 1.2rem;
+  padding-left: 1.4rem;
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+@media (min-width: 650px) {
+  .generator-card,
+  .steps-card {
+    padding: 1.6rem;
+  }
+
+  .setup-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .field-full {
+    grid-column: 1 / -1;
+  }
+}

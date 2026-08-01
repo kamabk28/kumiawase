@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="referrer" content="no-referrer">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'self'"
+    >
+    <title>初期設定 | Ensemble Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=LINE+Seed+JP:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/setup.css">
+    <script type="module" src="js/setup.js"></script>
+  </head>
+  <body class="setup-page">
+    <header class="setup-header">
+      <a class="compact-brand" href="./">
+        <span class="compact-mark" aria-hidden="true">E</span>
+        <span><strong>Ensemble Board</strong><small>初期設定</small></span>
+      </a>
+    </header>
+
+    <main class="setup-main">
+      <section class="setup-hero">
+        <p class="eyebrow">LOCAL SETUP TOOL</p>
+        <h1>秘密情報を安全に準備</h1>
+        <p>
+          入力したパスワードは外部へ送信されません。このブラウザ内だけでハッシュ化し、
+          GASのスクリプトプロパティへ貼り付ける値を作ります。
+        </p>
+      </section>
+
+      <section class="generator-card" aria-labelledby="generator-heading">
+        <h2 id="generator-heading">1. 認証用の値を生成</h2>
+        <form id="setup-generator" novalidate>
+          <div class="setup-form-grid">
+            <label class="field-group">
+              <span class="field-label">共有パスワード</span>
+              <input id="setup-password" type="password" autocomplete="new-password" minlength="10" maxlength="128" required>
+              <small>10文字以上をおすすめします。</small>
+            </label>
+            <label class="field-group">
+              <span class="field-label">パスワード（確認）</span>
+              <input id="setup-password-confirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required>
+            </label>
+            <label class="field-group field-full">
+              <span class="field-label">GitHub Pagesのホスト名</span>
+              <input id="setup-hostname" type="text" value="kamabk28.github.io" required>
+              <small>URLではなく、<code>kamabk28.github.io</code> の部分だけを入力します。</small>
+            </label>
+          </div>
+          <p id="setup-error" class="form-error" role="alert" hidden></p>
+          <button class="button button-primary" type="submit">設定値を生成</button>
+        </form>
+
+        <div id="generated-values" class="generated-values" hidden>
+          <div class="generated-heading">
+            <div>
+              <p class="eyebrow">GENERATED</p>
+              <h3>生成できました</h3>
+            </div>
+            <button id="copy-all" class="button button-quiet" type="button">まとめてコピー</button>
+          </div>
+          <p class="security-note">この画面を閉じると値は消えます。パスワードそのものは表示・保存されません。</p>
+          <dl id="generated-list"></dl>
+        </div>
+      </section>
+
+      <section class="steps-card">
+        <h2>2. 次に行うこと</h2>
+        <ol>
+          <li>Cloudflare TurnstileでManagedウィジェットを作り、ホスト名を登録します。</li>
+          <li>GoogleスプレッドシートにGASコードを入れ、上で生成した値とTurnstile秘密鍵をスクリプトプロパティへ保存します。</li>
+          <li><code>setupSheets</code> を実行してから、GASを「全員」向けWebアプリとしてデプロイします。</li>
+          <li>取得したGAS URLとTurnstileサイトキーを <code>js/config.js</code> に設定します。</li>
+        </ol>
+        <a class="button button-quiet" href="https://github.com/kamabk28/ensemble-practice-board/blob/main/SETUP.md">詳しい設定手順を開く</a>
+      </section>
+    </main>
+  </body>
+</html>

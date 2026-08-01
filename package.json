@@ -1,0 +1,14 @@
+{
+  "name": "ensemble-practice-board",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "吹奏楽部向け組み合わせ練習スケジュール管理アプリ",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check js/core.js && node --check js/api.js && node --check js/app.js && node --check js/setup.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
