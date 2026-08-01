@@ -3,8 +3,8 @@
  * TURNSTILE_SECRET やパスワードなどの秘密情報は、ここには絶対に書かないでください。
  */
 window.APP_CONFIG = Object.freeze({
-  apiUrl: "YOUR_GAS_WEB_APP_URL",
-  turnstileSiteKey: "YOUR_TURNSTILE_SITE_KEY",
+  apiUrl: "https://script.google.com/macros/s/AKfycbxQGPcgejyl2R9GgnHFUqg7lZ76xEhs90hmMBRDesOPt-W0VFlbsD_Bu97KNwgjj76Z/exec",
+  turnstileSiteKey: "0x4AAAAAAEDgelgQX6TLlnUe",
   pollIntervalMs: 30_000,
   requestTimeoutMs: 20_000,
   sessionStorageKey: "ensemble-board-session-v1",
