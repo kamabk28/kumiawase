@@ -157,3 +157,24 @@ test("安全なコンテキストでない場合は非対応として扱う", as
 
   assert.equal((await manager.getState()).key, NOTIFICATION_STATES.unsupported);
 });
+
+test("native fetch is called with the browser environment as its receiver", async () => {
+  const fixture = createNotificationFixture();
+  let receiver;
+  async function fetchImpl() {
+    receiver = this;
+    return jsonResponse({
+      ok: true,
+      data: { enabled: true, publicKey: "public-key" },
+    });
+  }
+  const manager = new PushNotificationManager({
+    environment: fixture.environment,
+    fetchImpl,
+  });
+
+  const state = await manager.getState({ checkServer: true });
+
+  assert.equal(state.key, NOTIFICATION_STATES.disabled);
+  assert.equal(receiver, fixture.environment);
+});

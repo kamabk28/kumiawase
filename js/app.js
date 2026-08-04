@@ -20,7 +20,7 @@ import {
 import {
   NOTIFICATION_STATES,
   PushNotificationManager,
-} from "./notifications.js?v=20260804-1";
+} from "./notifications.js?v=20260804-2";
 
 const config = window.APP_CONFIG;
 const params = new URLSearchParams(window.location.search);

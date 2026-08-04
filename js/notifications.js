@@ -29,7 +29,10 @@ export class PushNotificationManager {
     this.serviceWorkerUrl = serviceWorkerUrl;
     this.getSessionToken = getSessionToken || (() => "");
     this.environment = environment;
-    this.fetchImpl = fetchImpl;
+    // Native browser APIs can reject calls made with an unrelated `this`
+    // value. Keep fetch bound to the window-like environment instead of
+    // invoking it later as a PushNotificationManager method.
+    this.fetchImpl = fetchImpl.bind(environment);
     this.config = null;
   }
 
