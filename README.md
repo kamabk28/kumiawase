@@ -2,7 +2,7 @@
 
 吹奏楽部の組み合わせ練習を、スマートフォンから共有・管理するWebアプリです。制作にはAIを活用しています。
 
-- GitHub Pagesでフロントエンドを公開
+- Cloudflare PagesまたはGitHub Pagesでフロントエンドを公開
 - Google Apps Scriptを認証付きWeb APIとして使用
 - Googleスプレッドシートへ無料で保存
 - Cloudflare Turnstileでログイン時のボット対策
@@ -10,6 +10,7 @@
 - 予定の登録・編集、時間／部屋の重複チェック
 - 10秒以内の削除取り消し
 - 過去予定のアーカイブ表示
+- 新しい予定を端末へWeb Push通知
 - スマートフォンはカード表示、PCは2列表示
 
 ## デモ
@@ -52,12 +53,16 @@ GitHub Pages → GAS Web API → Google Spreadsheet
 
 ## 開発と確認
 
-Node.js 20以上で実行します。追加パッケージのインストールは不要です。
+Node.js 20以上で実行します。
 
 ```bash
+npm install
 npm test
 npm run check
+npm run build
 ```
+
+Cloudflare Pagesへの移行と通知設定は [CLOUDFLARE_PAGES.md](CLOUDFLARE_PAGES.md) を参照してください。
 
 ローカル表示は任意の静的HTTPサーバーを使用し、`?demo=1` を付けて開きます。
 

@@ -9,6 +9,8 @@ window.APP_CONFIG = Object.freeze({
   requestTimeoutMs: 20_000,
   sessionStorageKey: "ensemble-board-session-v1",
   undoStorageKey: "ensemble-board-undo-v1",
+  pushApiBase: "/api/push",
+  pushServiceWorkerUrl: "/sw.js",
 });
 
 window.onTurnstileReady = () => {

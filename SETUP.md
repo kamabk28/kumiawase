@@ -1,6 +1,8 @@
 # 組み合わせ練習 初期設定
 
-設定は、Cloudflare Turnstile → Googleスプレッドシート／GAS → GitHub Pagesの順で行います。パスワードや秘密鍵をGitHubへ書き込まないでください。
+設定は、Cloudflare Turnstile → Googleスプレッドシート／GAS → 公開先の順で行います。パスワードや秘密鍵をGitHubへ書き込まないでください。
+
+Cloudflare Pagesへ移行して新規予定の通知を使う場合は、通常の初期設定後に [CLOUDFLARE_PAGES.md](CLOUDFLARE_PAGES.md) の手順を進めてください。
 
 ## 1. Cloudflare Turnstileを作る
 
@@ -110,6 +112,8 @@ window.APP_CONFIG = Object.freeze({
   requestTimeoutMs: 20_000,
   sessionStorageKey: "ensemble-board-session-v1",
   undoStorageKey: "ensemble-board-undo-v1",
+  pushApiBase: "/api/push",
+  pushServiceWorkerUrl: "/sw.js",
 });
 ```
 

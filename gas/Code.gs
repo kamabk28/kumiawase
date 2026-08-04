@@ -27,6 +27,12 @@ const PROPERTY_KEYS = Object.freeze({
   allowedHostname: "ALLOWED_HOSTNAME",
 });
 
+const OPTIONAL_PROPERTY_KEYS = Object.freeze({
+  allowedHostnames: "ALLOWED_HOSTNAMES",
+  pushWebhookUrl: "PUSH_WEBHOOK_URL",
+  pushWebhookSecret: "PUSH_WEBHOOK_SECRET",
+});
+
 const SCHEDULE_HEADERS = Object.freeze([
   "id",
   "practiceDate",
@@ -148,7 +154,9 @@ function doPost(event) {
         data = listSchedules_(request);
         break;
       case "create":
-        data = { schedule: createSchedule_(request.schedule) };
+        const createdSchedule = createSchedule_(request.schedule);
+        data = { schedule: createdSchedule };
+        notifyScheduleCreated_(createdSchedule);
         break;
       case "update":
         data = { schedule: updateSchedule_(request.schedule) };
@@ -203,8 +211,16 @@ function setupSheets() {
 /** Apps Scriptエディタから、設定不足がないか確認できます。 */
 function getSetupStatus() {
   const properties = PropertiesService.getScriptProperties();
-  const required = Object.keys(PROPERTY_KEYS).map(function (key) { return PROPERTY_KEYS[key]; });
+  const required = Object.keys(PROPERTY_KEYS)
+    .filter(function (key) { return key !== "allowedHostname"; })
+    .map(function (key) { return PROPERTY_KEYS[key]; });
   const missing = required.filter(function (key) { return !properties.getProperty(key); });
+  if (
+    !properties.getProperty(PROPERTY_KEYS.allowedHostname) &&
+    !properties.getProperty(OPTIONAL_PROPERTY_KEYS.allowedHostnames)
+  ) {
+    missing.push(PROPERTY_KEYS.allowedHostname + " または " + OPTIONAL_PROPERTY_KEYS.allowedHostnames);
+  }
   const result = {
     ready: missing.length === 0,
     missingProperties: missing,
@@ -489,9 +505,61 @@ function validateTurnstile_(token) {
     throw appError_("TURNSTILE_ERROR", "安全性の確認結果が一致しませんでした。");
   }
 
-  const allowedHostname = properties.getProperty(PROPERTY_KEYS.allowedHostname);
-  if (allowedHostname && result.hostname !== allowedHostname) {
+  const allowedHostnames = [
+    properties.getProperty(PROPERTY_KEYS.allowedHostname),
+    properties.getProperty(OPTIONAL_PROPERTY_KEYS.allowedHostnames),
+  ]
+    .join(",")
+    .split(",")
+    .map(function (hostname) { return hostname.trim().toLowerCase(); })
+    .filter(Boolean);
+  if (
+    allowedHostnames.length &&
+    allowedHostnames.indexOf(String(result.hostname || "").toLowerCase()) < 0
+  ) {
     throw appError_("TURNSTILE_ERROR", "許可されていないサイトからのアクセスです。");
+  }
+}
+
+/**
+ * 予定の保存自体は成功扱いにしたまま、Cloudflare Pagesへ通知を依頼します。
+ * 通知設定が未入力、または一時的に失敗した場合はログだけを残します。
+ */
+function notifyScheduleCreated_(schedule) {
+  const properties = PropertiesService.getScriptProperties();
+  const webhookUrl = String(properties.getProperty(OPTIONAL_PROPERTY_KEYS.pushWebhookUrl) || "").trim();
+  const webhookSecret = String(properties.getProperty(OPTIONAL_PROPERTY_KEYS.pushWebhookSecret) || "").trim();
+  if (!webhookUrl || !webhookSecret) return;
+
+  if (!/^https:\/\//i.test(webhookUrl)) {
+    console.error("PUSH_WEBHOOK_URLはhttps://から始まるURLにしてください。");
+    return;
+  }
+
+  try {
+    const response = UrlFetchApp.fetch(webhookUrl, {
+      method: "post",
+      contentType: "application/json",
+      headers: { Authorization: "Bearer " + webhookSecret },
+      payload: JSON.stringify({
+        schedule: {
+          id: schedule.id,
+          startTime: schedule.startTime,
+          endTime: schedule.endTime,
+        },
+      }),
+      muteHttpExceptions: true,
+    });
+    if (response.getResponseCode() < 200 || response.getResponseCode() >= 300) {
+      console.error(
+        "通知Webhookが失敗しました: HTTP " +
+          response.getResponseCode() +
+          " " +
+          response.getContentText().slice(0, 500)
+      );
+    }
+  } catch (error) {
+    console.error("通知Webhookへ接続できませんでした: " + error);
   }
 }
 

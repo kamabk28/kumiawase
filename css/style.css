@@ -452,6 +452,31 @@ textarea:focus {
   animation: spin 700ms linear infinite;
 }
 
+.notification-button {
+  position: relative;
+}
+
+.notification-button::after {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.35rem;
+  width: 0.48rem;
+  height: 0.48rem;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: #9aacaa;
+  content: "";
+}
+
+.notification-button[data-notification-state="enabled"]::after {
+  background: #32a875;
+}
+
+.notification-button[data-notification-state="blocked"]::after,
+.notification-button[data-notification-state="unavailable"]::after {
+  background: var(--danger);
+}
+
 .text-button {
   display: none;
   padding: 0 0.65rem;
@@ -1187,6 +1212,70 @@ dialog::backdrop {
   grid-template-columns: 1fr 1fr;
   gap: 0.65rem;
   margin-top: 1rem;
+}
+
+.notification-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.notification-heading h2 {
+  margin: 0 0 0.25rem;
+}
+
+.notification-icon {
+  display: grid;
+  width: 2.8rem;
+  height: 2.8rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.85rem;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.notification-state-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.notification-state-badge[data-state="enabled"] {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.notification-state-badge[data-state="blocked"],
+.notification-state-badge[data-state="unavailable"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.notification-status-text {
+  margin: 1rem 0 0.6rem;
+  line-height: 1.65;
+}
+
+.notification-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.notification-actions #enable-notifications-button {
+  grid-column: 1 / -1;
+}
+
+.notification-actions [data-close-notification] {
+  grid-column: 1 / -1;
 }
 
 .toast-region {
