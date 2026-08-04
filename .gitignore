@@ -1,8 +1,11 @@
 .DS_Store
 Thumbs.db
 node_modules/
+dist/
 .env
 .env.*
+.dev.vars
+.dev.vars.*
 .clasp.json
 .clasprc.json
 *.log

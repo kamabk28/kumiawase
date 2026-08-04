@@ -5,8 +5,14 @@
   "type": "module",
   "description": "吹奏楽部向け組み合わせ練習スケジュール管理アプリ",
   "scripts": {
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/preview.mjs",
+    "push:keys": "node scripts/generate-vapid-keys.mjs",
     "test": "node --test",
-    "check": "node --check js/core.js && node --check js/api.js && node --check js/app.js && node --check js/setup.js"
+    "check": "node --check js/core.js && node --check js/api.js && node --check js/notifications.js && node --check js/app.js && node --check js/setup.js && node --check sw.js && node --check cloudflare/push.js && node --check functions/api/push/config.js && node --check functions/api/push/subscriptions.js && node --check functions/api/push/broadcast.js && node --check scripts/build.mjs && node --check scripts/generate-vapid-keys.mjs && node --check scripts/preview.mjs"
+  },
+  "dependencies": {
+    "@block65/webcrypto-web-push": "1.0.2"
   },
   "engines": {
     "node": ">=20"

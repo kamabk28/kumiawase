@@ -1,4 +1,4 @@
-import { ApiClient, ApiError, MockApi } from "./api.js?v=20260801-2";
+import { ApiClient, ApiError, MockApi } from "./api.js?v=20260804-1";
 import {
   INSTRUMENT_GROUPS,
   OTHER_VALUE,
@@ -16,7 +16,11 @@ import {
   sortSchedules,
   todayKey,
   validateScheduleInput,
-} from "./core.js?v=20260801-2";
+} from "./core.js?v=20260804-1";
+import {
+  NOTIFICATION_STATES,
+  PushNotificationManager,
+} from "./notifications.js?v=20260804-1";
 
 const config = window.APP_CONFIG;
 const params = new URLSearchParams(window.location.search);
@@ -47,6 +51,12 @@ const state = {
   optionsSignature: "",
 };
 
+const pushNotifications = new PushNotificationManager({
+  apiBase: config.pushApiBase,
+  serviceWorkerUrl: config.pushServiceWorkerUrl,
+  getSessionToken: () => state.sessionToken,
+});
+
 const dom = {
   setupScreen: get("setup-screen"),
   authScreen: get("auth-screen"),
@@ -60,6 +70,7 @@ const dom = {
   turnstileContainer: get("turnstile-container"),
   syncStatus: get("sync-status"),
   refreshButton: get("refresh-button"),
+  notificationButton: get("notification-button"),
   logoutButton: get("logout-button"),
   todayView: get("today-view"),
   archiveView: get("archive-view"),
@@ -103,6 +114,13 @@ const dom = {
   deleteSummary: get("delete-summary"),
   deleteError: get("delete-error"),
   confirmDeleteButton: get("confirm-delete-button"),
+  notificationDialog: get("notification-dialog"),
+  notificationStateBadge: get("notification-state-badge"),
+  notificationStatusText: get("notification-status-text"),
+  notificationError: get("notification-error"),
+  enableNotificationsButton: get("enable-notifications-button"),
+  testNotificationButton: get("test-notification-button"),
+  disableNotificationsButton: get("disable-notifications-button"),
   toastRegion: get("toast-region"),
 };
 
@@ -144,7 +162,14 @@ function bindEvents() {
     if (state.currentView === "today") void loadToday();
     else void loadArchive();
   });
-  dom.logoutButton.addEventListener("click", () => logOut());
+  dom.notificationButton.addEventListener("click", () => void openNotificationDialog());
+  dom.enableNotificationsButton.addEventListener("click", handleEnableNotifications);
+  dom.testNotificationButton.addEventListener("click", handleTestNotification);
+  dom.disableNotificationsButton.addEventListener("click", handleDisableNotifications);
+  document.querySelectorAll("[data-close-notification]").forEach((button) => {
+    button.addEventListener("click", () => dom.notificationDialog.close());
+  });
+  dom.logoutButton.addEventListener("click", () => void logOut());
 
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => switchView(button.dataset.view));
@@ -173,6 +198,7 @@ function bindEvents() {
 
   dom.scheduleDialog.addEventListener("click", closeOnBackdrop);
   dom.deleteDialog.addEventListener("click", closeOnBackdrop);
+  dom.notificationDialog.addEventListener("click", closeOnBackdrop);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden && !dom.appShell.hidden && state.currentView === "today") void loadToday({ silent: true });
   });
@@ -252,6 +278,7 @@ async function enterApp() {
   startPolling();
   await loadToday();
   restoreUndoToast();
+  void refreshNotificationState({ resync: true });
 }
 
 function renderTurnstile() {
@@ -345,11 +372,113 @@ function clearSession() {
   localStorage.removeItem(config.sessionStorageKey);
 }
 
-function logOut(showMessage = true) {
+async function logOut(showMessage = true) {
+  await pushNotifications.disable().catch(() => null);
   clearSession();
   stopPolling();
   if (showMessage) showLogin("このブラウザからログアウトしました。");
   else showLogin();
+}
+
+async function openNotificationDialog() {
+  hideError(dom.notificationError);
+  dom.notificationDialog.showModal();
+  await refreshNotificationState({ checkServer: true, resync: true });
+}
+
+async function refreshNotificationState({ checkServer = false, resync = false } = {}) {
+  try {
+    if (resync) await pushNotifications.resyncIfEnabled();
+    const notificationState = await pushNotifications.getState({ checkServer });
+    renderNotificationState(notificationState);
+    return notificationState;
+  } catch (error) {
+    const unavailable = {
+      key: NOTIFICATION_STATES.unavailable,
+      message: error.message || "通知状態を確認できませんでした。",
+    };
+    renderNotificationState(unavailable);
+    return unavailable;
+  }
+}
+
+function renderNotificationState(notificationState) {
+  const labels = {
+    [NOTIFICATION_STATES.enabled]: "通知中",
+    [NOTIFICATION_STATES.disabled]: "停止中",
+    [NOTIFICATION_STATES.blocked]: "拒否されています",
+    [NOTIFICATION_STATES.unavailable]: "設定が必要",
+    [NOTIFICATION_STATES.unsupported]: "非対応",
+  };
+  const key = notificationState?.key || NOTIFICATION_STATES.unavailable;
+  dom.notificationButton.dataset.notificationState = key;
+  dom.notificationButton.setAttribute("aria-label", `通知設定・${labels[key] || "状態不明"}`);
+  dom.notificationStateBadge.dataset.state = key;
+  dom.notificationStateBadge.textContent = labels[key] || "状態不明";
+  dom.notificationStatusText.textContent = notificationState?.message || "通知状態を確認できませんでした。";
+
+  const enabled = key === NOTIFICATION_STATES.enabled;
+  const unavailable =
+    key === NOTIFICATION_STATES.unavailable ||
+    key === NOTIFICATION_STATES.unsupported ||
+    key === NOTIFICATION_STATES.blocked;
+  dom.enableNotificationsButton.hidden = enabled;
+  dom.enableNotificationsButton.disabled = unavailable;
+  dom.testNotificationButton.disabled = !enabled;
+  dom.disableNotificationsButton.disabled = !enabled;
+}
+
+function setNotificationBusy(isBusy, message = "") {
+  dom.notificationDialog.querySelectorAll("button").forEach((button) => {
+    button.disabled = isBusy;
+  });
+  if (isBusy && message) dom.notificationStatusText.textContent = message;
+}
+
+async function handleEnableNotifications() {
+  hideError(dom.notificationError);
+  setNotificationBusy(true, "ブラウザの通知許可を確認しています…");
+  try {
+    const notificationState = await pushNotifications.enable();
+    renderNotificationState(notificationState);
+    if (notificationState.key === NOTIFICATION_STATES.enabled) {
+      showToast("この端末で新しい予定の通知を受け取ります。");
+    }
+  } catch (error) {
+    showError(dom.notificationError, error.message || "通知を有効にできませんでした。");
+  } finally {
+    setNotificationBusy(false);
+    await refreshNotificationState({ checkServer: true });
+  }
+}
+
+async function handleDisableNotifications() {
+  hideError(dom.notificationError);
+  setNotificationBusy(true, "通知を停止しています…");
+  try {
+    const notificationState = await pushNotifications.disable();
+    renderNotificationState(notificationState);
+    showToast("この端末への通知を停止しました。");
+  } catch (error) {
+    showError(dom.notificationError, error.message || "通知を停止できませんでした。");
+  } finally {
+    setNotificationBusy(false);
+    await refreshNotificationState({ checkServer: true });
+  }
+}
+
+async function handleTestNotification() {
+  hideError(dom.notificationError);
+  setNotificationBusy(true, "テスト通知を送っています…");
+  try {
+    await pushNotifications.showTestNotification();
+    showToast("テスト通知を表示しました。");
+  } catch (error) {
+    showError(dom.notificationError, error.message || "テスト通知を表示できませんでした。");
+  } finally {
+    setNotificationBusy(false);
+    await refreshNotificationState({ checkServer: true });
+  }
 }
 
 async function loadToday({ silent = false } = {}) {
@@ -656,7 +785,7 @@ function handleScheduleError(error) {
   }
 
   if (error.code === "AUTH_REQUIRED") {
-    logOut(false);
+    void logOut(false);
     return;
   }
   showError(dom.scheduleError, error.message);
@@ -704,7 +833,7 @@ async function handleDeleteConfirm() {
     localStorage.setItem(config.undoStorageKey, JSON.stringify(undo));
     showUndoToast(undo);
   } catch (error) {
-    if (error.code === "AUTH_REQUIRED") logOut(false);
+    if (error.code === "AUTH_REQUIRED") void logOut(false);
     else if (error.code === "VERSION_CONFLICT" || error.code === "NOT_FOUND") {
       dom.deleteDialog.close();
       showToast("予定が更新されています。最新の一覧を読み込みます。", { type: "error" });
