@@ -13,7 +13,7 @@ const files = [
   "setup.html",
   "sw.js",
 ];
-const directories = ["css", "js"];
+const directories = ["css", "icons", "js"];
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });

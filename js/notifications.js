@@ -212,6 +212,7 @@ export class PushNotificationManager {
       (await this.registerServiceWorker());
     await registration.showNotification("組み合わせ練習・通知テスト", {
       body: "通知は正常に動作しています。",
+      icon: "/icons/app-icon-192.png",
       tag: "notification-test",
       data: { url: "/" },
     });
